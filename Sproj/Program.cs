@@ -4,41 +4,8 @@ using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder();
 var app = builder.Build();
 
-// Фиктивная база пользователей (логин → пароль)
-var users = new Dictionary<string, string>();
-
-app.MapPost("/register", async (HttpContext context) =>
-{
-    try
-    {
-        var user = await JsonSerializer.DeserializeAsync<User>(context.Request.Body);
-
-        if (user == null || string.IsNullOrWhiteSpace(user.Login) || string.IsNullOrWhiteSpace(user.Password))
-        {
-            context.Response.StatusCode = 400;
-            await context.Response.WriteAsync(JsonSerializer.Serialize(new { success = false, message = "Введите логин и пароль!" }));
-            return;
-        }
-
-        if (users.ContainsKey(user.Login))
-        {
-            context.Response.StatusCode = 400;
-            await context.Response.WriteAsync(JsonSerializer.Serialize(new { success = false, message = "Такой пользователь уже существует!" }));
-            return;
-        }
-
-        users[user.Login] = user.Password; // Добавляем пользователя в "базу"
-
-        // Отправляем JSON с командой для редиректа
-        context.Response.ContentType = "application/json; charset=utf-8";
-        await context.Response.WriteAsync(JsonSerializer.Serialize(new { success = true, redirect = "/login" }));
-    }
-    catch (Exception)
-    {
-        context.Response.StatusCode = 500;
-        await context.Response.WriteAsync(JsonSerializer.Serialize(new { success = false, message = "Ошибка сервера" }));
-    }
-});
+const string Login = "janetnil2003@gmail.com";
+const string Password = "12345";
 
 app.MapPost("/login", async (HttpContext context) =>
 {
@@ -53,7 +20,7 @@ app.MapPost("/login", async (HttpContext context) =>
             return;
         }
 
-        if (users.TryGetValue(user.Login, out var storedPassword) && storedPassword == user.Password)
+        if (user.Login == Login && user.Password == Password)
         {
             context.Response.ContentType = "application/json; charset=utf-8";
             await context.Response.WriteAsync(JsonSerializer.Serialize(new { success = true, redirect = "/newpage" }));
@@ -82,16 +49,14 @@ app.MapGet("/newpage", (HttpContext context) =>
     return Task.CompletedTask;
 });
 
-// Отдаем страницу регистрации как стартовую
 app.MapGet("/", async (HttpContext context) =>
 {
     context.Response.ContentType = "text/html; charset=utf-8";
-    await context.Response.SendFileAsync("html/register.html");
+    await context.Response.SendFileAsync("html/login.html");
 });
 
 app.Run();
 
-// Класс для работы с JSON
 class User
 {
     [JsonPropertyName("login")]
